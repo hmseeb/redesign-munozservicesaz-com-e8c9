@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Muñoz Services LLC">
+  <defs>
+    <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#BB4825"/>
+      <stop offset="55%" stop-color="#D97829"/>
+      <stop offset="100%" stop-color="#EE9A3E"/>
+    </linearGradient>
+    <clipPath id="card">
+      <rect x="0" y="0" width="64" height="64" rx="14"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#card)">
+    <rect x="0" y="0" width="64" height="64" fill="#091722"/>
+
+    <!-- sunset arc -->
+    <circle cx="32" cy="36" r="20" fill="url(#sun)"/>
+
+    <!-- crescent moon -->
+    <path d="M45.4 17.6a5.2 5.2 0 1 0 3.6 6.9 6.3 6.3 0 0 1-3.6-6.9Z" fill="#FDD99D"/>
+
+    <!-- radio towers on the ridge -->
+    <g stroke="#091722" stroke-width="1.8" stroke-linecap="round">
+      <path d="M22 40V25"/>
+      <path d="M32 40V17"/>
+      <path d="M42 40V27"/>
+    </g>
+    <circle cx="22" cy="25" r="1.9" fill="#E8471F"/>
+    <circle cx="32" cy="17" r="1.9" fill="#E8471F"/>
+    <circle cx="42" cy="27" r="1.9" fill="#E8471F"/>
+
+    <!-- desert ridge -->
+    <path d="M-2 64V47l9-4 8 7 9-14 8 11 7-8 10 12 8-5 5 3v15Z" fill="#091722"/>
+  </g>
+</svg>
