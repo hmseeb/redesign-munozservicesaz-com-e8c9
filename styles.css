@@ -532,10 +532,11 @@ button { cursor: pointer; border: 0; background: none; }
   transition: transform .5s var(--ease);
 }
 .shot:hover { transform: rotate(0deg); }
+/* Shown in full — this is a before/after photo, so nothing is cropped. */
 .shot img {
+  display: block;
   width: 100%;
-  aspect-ratio: 16 / 10;
-  object-fit: cover;
+  height: auto;
 }
 .shot__tag {
   position: absolute;
@@ -627,10 +628,13 @@ button { cursor: pointer; border: 0; background: none; }
 .card:hover { transform: translateY(-7px); box-shadow: var(--shadow); }
 
 .card__media { position: relative; overflow: hidden; }
+/* contain (not cover) so the whole before/after frame stays visible while the
+   cards keep a uniform height. */
 .card__media img {
   width: 100%;
   aspect-ratio: 4 / 3;
-  object-fit: cover;
+  object-fit: contain;
+  background: var(--ink-3);
   transition: transform .6s var(--ease);
 }
 .card:hover .card__media img { transform: scale(1.06); }
@@ -786,10 +790,11 @@ button { cursor: pointer; border: 0; background: none; }
   box-shadow: var(--shadow);
   border: 1px solid var(--line);
 }
+/* Full frame, uncropped, so the before and after halves are both readable. */
 .showcase__media img {
+  display: block;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
+  height: auto;
 }
 .showcase__media figcaption {
   padding: 15px 22px;
@@ -899,22 +904,22 @@ button { cursor: pointer; border: 0; background: none; }
   color: var(--cream);
 }
 
+/* Masonry columns instead of fixed-height rows: every photo is shown in full
+   at its own aspect ratio, so the before and after halves are never cropped. */
 .grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: 210px;
-  gap: 18px;
-  /* dense packing stops the row-spanning tall tile from leaving a hole */
-  grid-auto-flow: dense;
+  column-count: 3;
+  column-gap: 18px;
 }
-.grid__item--wide { grid-column: span 2; }
-.grid__item--tall { grid-row: span 2; }
+.grid__item {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  margin: 0 0 18px;
+}
 
 .tile {
   position: relative;
   display: block;
   width: 100%;
-  height: 100%;
   padding: 0;
   border-radius: var(--r-lg);
   overflow: hidden;
@@ -923,14 +928,11 @@ button { cursor: pointer; border: 0; background: none; }
   transition: transform .4s var(--ease), box-shadow .4s var(--ease), border-color .4s var(--ease);
 }
 .tile img {
+  display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
   transition: transform .6s var(--ease), filter .4s var(--ease);
 }
-/* This source photo is a vertical collage with letterbox bars baked in;
-   bias the crop so the tile lands on the photo, not the black. */
-.tile__img--lower { object-position: center 52%; }
 .tile::after {
   content: "";
   position: absolute;
@@ -945,7 +947,6 @@ button { cursor: pointer; border: 0; background: none; }
   box-shadow: var(--shadow-lg);
   border-color: rgba(253, 217, 157, .4);
 }
-.tile:hover img { transform: scale(1.07); }
 .tile:hover::after { opacity: .95; }
 
 .tile__tag {
@@ -1298,7 +1299,6 @@ a.info:hover {
    RESPONSIVE
    ========================================================================== */
 @media (max-width: 1080px) {
-  .grid { grid-auto-rows: 180px; }
   .site-footer__grid { grid-template-columns: 1fr 1fr; }
 }
 
@@ -1365,11 +1365,10 @@ a.info:hover {
   .topbar__note { font-size: .8rem; }
 
   .grid {
-    grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: 160px;
-    gap: 12px;
+    column-count: 2;
+    column-gap: 12px;
   }
-  .grid__item--tall { grid-row: span 2; }
+  .grid__item { margin-bottom: 12px; }
 
   .cta-band__inner { flex-direction: column; align-items: flex-start; text-align: left; }
 
@@ -1390,8 +1389,7 @@ a.info:hover {
   .about__actions .btn,
   .cta-band__actions .btn { flex: 1 1 100%; }
 
-  .grid { grid-template-columns: 1fr; grid-auto-rows: 200px; }
-  .grid__item--wide, .grid__item--tall { grid-column: auto; grid-row: auto; }
+  .grid { column-count: 1; }
 
   .hero__chip { position: static; margin-top: 18px; justify-items: center; text-align: center; }
   .shot { transform: none; }
