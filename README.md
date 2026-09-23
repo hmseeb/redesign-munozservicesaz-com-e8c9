@@ -3,8 +3,9 @@
 A complete redesign of the Muñoz Services LLC site: a locally owned air duct cleaning
 company serving Arizona.
 
-Built as a static site with **vanilla HTML, CSS and JavaScript** — no build step, no
-dependencies, no environment variables and no external APIs.
+Built as a static site with **vanilla HTML, CSS and JavaScript** — no build step and no
+dependencies. The only server-side piece is a single serverless function that forwards
+contact form submissions to GoHighLevel.
 
 ## Files
 
@@ -13,6 +14,7 @@ dependencies, no environment variables and no external APIs.
 | `index.html`   | Entry point — the full single-page site                         |
 | `styles.css`   | All styling, design tokens and responsive rules                 |
 | `script.js`    | Navigation, scroll reveals, gallery lightbox, form validation   |
+| `api/lead.js`  | Serverless function — sends form submissions to GoHighLevel      |
 | `favicon.svg`  | Site icon, drawn from the company logo mark                     |
 | `robots.txt`   | Crawler directives                                              |
 | `sitemap.xml`  | Sitemap                                                         |
@@ -64,5 +66,33 @@ used because no original photo of the team exists.
 - **Hours:** Mon – Sat, 8:00 AM – 8:00 PM · Sunday closed
 - **Service area:** Arizona
 
-The contact form has no backend. It validates client-side and then hands the completed
-message to the visitor's own mail client, pre-addressed to the business.
+## Contact form → GoHighLevel
+
+The contact form validates client-side and then POSTs to `/api/lead`, which upserts the
+visitor into the GoHighLevel sub-account `TKJLNcpwEgvwUFshHw6b`:
+
+- First name / last name (split from the single Name field), email and phone
+- Custom field **Lead Source** → `Website`
+- Custom field **Website Form** → the submitting form's `data-form-name`
+- Tag **`website-lead`**
+- The message is attached to the contact as a note
+
+Either custom field is created automatically in the sub-account if it does not exist yet.
+On success the form resets and shows its thank-you message in place.
+
+### Required configuration
+
+The GoHighLevel token is secret and is read server-side only — it is never exposed to the
+browser. Set this environment variable in the hosting project (Vercel → Settings →
+Environment Variables) before the form can deliver leads:
+
+| Variable          | Value                                                    |
+| ----------------- | -------------------------------------------------------- |
+| `GHL_API_KEY`     | Private Integration token for the sub-account             |
+| `GHL_LOCATION_ID` | *(optional)* overrides the default location id            |
+
+The token needs the scopes `contacts.write`, `contacts.readonly`,
+`locations/customFields.write` and `locations/customFields.readonly`.
+
+To add another form later, give it `data-form-name="..."` and matching field names
+(`name`, `email`, `phone`, `message`) — `script.js` wires it up the same way.

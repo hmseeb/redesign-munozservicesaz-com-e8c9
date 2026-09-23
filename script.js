@@ -196,10 +196,13 @@
     if (e.key === 'Escape' && nav && nav.classList.contains('is-open')) closeMenu();
   });
 
-  /* -------------------------------------------------------- Contact form */
-  var form   = $('#contact-form');
-  var okMsg  = $('#form-ok');
-  var errMsg = $('#form-err');
+  /* ------------------------------------------- Contact / quote forms */
+  // Every enquiry form on the page is wired to the GoHighLevel endpoint.
+  // A new form only needs class "form" (or id #contact-form) and the usual
+  // name/email/phone/message fields to be picked up here.
+  var forms = $$('form.form, form#contact-form').filter(function (f, i, all) {
+    return all.indexOf(f) === i;
+  });
 
   var RULES = {
     name:    { test: function (v) { return v.length >= 2; },
@@ -229,7 +232,12 @@
     return valid;
   }
 
-  if (form) {
+  function initForm(form) {
+    // Status elements live inside the form when present, so multiple forms
+    // never share one another's messages; the ids are the legacy fallback.
+    var okMsg  = $('.form__status--ok', form)  || $('#form-ok');
+    var errMsg = $('.form__status--err', form) || $('#form-err');
+
     var fields = $$('input, textarea', form);
 
     fields.forEach(function (field) {
@@ -239,6 +247,9 @@
         if (wrap && wrap.classList.contains('has-error')) validateField(field);
       });
     });
+
+    var submitBtn  = $('button[type="submit"]', form);
+    var submitText = submitBtn ? submitBtn.textContent : '';
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -256,33 +267,52 @@
         return;
       }
 
-      // No backend and no third-party services: hand the message to the
-      // visitor's own mail client, pre-addressed and pre-filled.
-      try {
-        var get = function (n) { var f = form.elements[n]; return f ? f.value.trim() : ''; };
-        var subject = 'Website enquiry from ' + get('name');
-        var body = [
-          'Name: '    + get('name'),
-          'Email: '   + get('email'),
-          'Phone: '   + get('phone'),
-          '',
-          'Message:',
-          get('message')
-        ].join('\n');
+      // The lead goes to the GoHighLevel sub-account via our own endpoint,
+      // which holds the API token server-side.
+      var get = function (n) { var f = form.elements[n]; return f ? f.value.trim() : ''; };
 
-        window.location.href =
-          'mailto:munozservices00@gmail.com' +
-          '?subject=' + encodeURIComponent(subject) +
-          '&body='    + encodeURIComponent(body);
-
-        if (okMsg) okMsg.hidden = false;
-        form.reset();
-        fields.forEach(function (field) { showError(field, ''); });
-      } catch (err) {
-        if (errMsg) errMsg.hidden = false;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending…';
       }
+
+      function done() {
+        if (!submitBtn) return;
+        submitBtn.disabled = false;
+        submitBtn.textContent = submitText;
+      }
+
+      fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:     get('name'),
+          email:    get('email'),
+          phone:    get('phone'),
+          message:  get('message'),
+          formName: form.getAttribute('data-form-name') || 'Contact Form'
+        })
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error('Request failed with ' + res.status);
+          return res.json().catch(function () { return { ok: true }; });
+        })
+        .then(function (data) {
+          if (data && data.ok === false) throw new Error(data.error || 'Submission rejected');
+          done();
+          // role="status" on this element announces it to screen readers.
+          if (okMsg) okMsg.hidden = false;
+          form.reset();
+          fields.forEach(function (field) { showError(field, ''); });
+        })
+        .catch(function () {
+          done();
+          if (errMsg) errMsg.hidden = false;
+        });
     });
   }
+
+  forms.forEach(initForm);
 
   /* --------------------------------------------------------------- Init */
   window.addEventListener('scroll', onScroll, { passive: true });
