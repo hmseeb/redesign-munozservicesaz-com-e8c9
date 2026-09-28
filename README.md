@@ -3,9 +3,9 @@
 A complete redesign of the Muñoz Services LLC site: a locally owned air duct cleaning
 company serving Arizona.
 
-Built as a static site with **vanilla HTML, CSS and JavaScript** — no build step and no
-dependencies. The only server-side piece is a single serverless function that forwards
-contact form submissions to GoHighLevel.
+Built as a static site with **vanilla HTML, CSS and JavaScript** — no build step, no
+dependencies and no server-side code. Contact form submissions are posted directly to
+the LeadrVision forms endpoint.
 
 ## Files
 
@@ -14,7 +14,6 @@ contact form submissions to GoHighLevel.
 | `index.html`   | Entry point — the full single-page site                         |
 | `styles.css`   | All styling, design tokens and responsive rules                 |
 | `script.js`    | Navigation, scroll reveals, gallery lightbox, form validation   |
-| `api/lead.js`  | Serverless function — sends form submissions to GoHighLevel      |
 | `favicon.svg`  | Site icon, drawn from the company logo mark                     |
 | `robots.txt`   | Crawler directives                                              |
 | `sitemap.xml`  | Sitemap                                                         |
@@ -66,33 +65,25 @@ used because no original photo of the team exists.
 - **Hours:** Mon – Sat, 8:00 AM – 8:00 PM · Sunday closed
 - **Service area:** Arizona
 
-## Contact form → GoHighLevel
+## Contact form → LeadrVision
 
-The contact form validates client-side and then POSTs to `/api/lead`, which upserts the
-visitor into the GoHighLevel sub-account `TKJLNcpwEgvwUFshHw6b`:
+The contact form validates client-side and then POSTs to the LeadrVision forms endpoint:
 
-- First name / last name (split from the single Name field), email and phone
-- Custom field **Lead Source** → `Website`
-- Custom field **Website Form** → the submitting form's `data-form-name`
-- Tag **`website-lead`**
-- The message is attached to the contact as a note
+```
+https://vision.leadrai.com/api/forms/323616ccff3c9180b5b14e31c0418b42
+```
 
-Either custom field is created automatically in the sub-account if it does not exist yet.
-On success the form resets and shows its thank-you message in place.
+The same URL is set as the form's `action`, so the form still works with JavaScript
+disabled. Alongside the visible `name`, `email`, `phone` and `message` fields it sends:
 
-### Required configuration
+- `_form` — a short human name for the form (`Contact`)
+- `_page` — `window.location.href`, filled in on page load
+- `_gotcha` — a hidden honeypot that real visitors never fill in
 
-The GoHighLevel token is secret and is read server-side only — it is never exposed to the
-browser. Set this environment variable in the hosting project (Vercel → Settings →
-Environment Variables) before the form can deliver leads:
+With JavaScript the response is `{"ok": true}` and the thank-you message is shown inline
+while the form resets. Without JavaScript the visitor returns to the page with
+`?submitted=1`, which shows the same confirmation.
 
-| Variable          | Value                                                    |
-| ----------------- | -------------------------------------------------------- |
-| `GHL_API_KEY`     | Private Integration token for the sub-account             |
-| `GHL_LOCATION_ID` | *(optional)* overrides the default location id            |
-
-The token needs the scopes `contacts.write`, `contacts.readonly`,
-`locations/customFields.write` and `locations/customFields.readonly`.
-
-To add another form later, give it `data-form-name="..."` and matching field names
-(`name`, `email`, `phone`, `message`) — `script.js` wires it up the same way.
+To add another form later, give it `class="form"`, the same `action`, the three hidden
+fields and matching field names (`name`, `email`, `phone`, `message`) — `script.js` wires
+it up the same way.

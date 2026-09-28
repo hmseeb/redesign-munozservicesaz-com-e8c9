@@ -197,9 +197,11 @@
   });
 
   /* ------------------------------------------- Contact / quote forms */
-  // Every enquiry form on the page is wired to the GoHighLevel endpoint.
+  // Every enquiry form on the page posts to the LeadrVision forms endpoint.
   // A new form only needs class "form" (or id #contact-form) and the usual
   // name/email/phone/message fields to be picked up here.
+  var FORMS_ENDPOINT = 'https://vision.leadrai.com/api/forms/323616ccff3c9180b5b14e31c0418b42';
+
   var forms = $$('form.form, form#contact-form').filter(function (f, i, all) {
     return all.indexOf(f) === i;
   });
@@ -232,13 +234,29 @@
     return valid;
   }
 
+  // Records the page the visitor submitted from, so they are returned here.
+  function setPageField(form) {
+    var pageField = form.elements['_page'];
+    if (pageField) pageField.value = window.location.href;
+  }
+
   function initForm(form) {
     // Status elements live inside the form when present, so multiple forms
     // never share one another's messages; the ids are the legacy fallback.
     var okMsg  = $('.form__status--ok', form)  || $('#form-ok');
     var errMsg = $('.form__status--err', form) || $('#form-err');
 
-    var fields = $$('input, textarea', form);
+    setPageField(form);
+
+    // After a plain (no-JavaScript) submission the visitor comes back with
+    // ?submitted=1 — show the same confirmation in place.
+    if (/[?&]submitted=1(&|$)/.test(window.location.search) && okMsg) {
+      okMsg.hidden = false;
+    }
+
+    var fields = $$('input, textarea', form).filter(function (field) {
+      return field.name.charAt(0) !== '_';
+    });
 
     fields.forEach(function (field) {
       field.addEventListener('blur', function () { validateField(field); });
@@ -267,9 +285,11 @@
         return;
       }
 
-      // The lead goes to the GoHighLevel sub-account via our own endpoint,
-      // which holds the API token server-side.
+      // The lead goes straight to the LeadrVision forms endpoint — the same
+      // URL as the form's action attribute.
       var get = function (n) { var f = form.elements[n]; return f ? f.value.trim() : ''; };
+
+      setPageField(form);
 
       if (submitBtn) {
         submitBtn.disabled = true;
@@ -282,15 +302,17 @@
         submitBtn.textContent = submitText;
       }
 
-      fetch('/api/lead', {
+      fetch(form.getAttribute('action') || FORMS_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name:     get('name'),
-          email:    get('email'),
-          phone:    get('phone'),
-          message:  get('message'),
-          formName: form.getAttribute('data-form-name') || 'Contact Form'
+          name:    get('name'),
+          email:   get('email'),
+          phone:   get('phone'),
+          message: get('message'),
+          _form:   get('_form') || form.getAttribute('data-form-name') || 'Contact',
+          _page:   window.location.href,
+          _gotcha: get('_gotcha')
         })
       })
         .then(function (res) {
@@ -303,6 +325,7 @@
           // role="status" on this element announces it to screen readers.
           if (okMsg) okMsg.hidden = false;
           form.reset();
+          setPageField(form);
           fields.forEach(function (field) { showError(field, ''); });
         })
         .catch(function () {

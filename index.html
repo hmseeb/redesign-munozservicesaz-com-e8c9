@@ -571,8 +571,13 @@
         </div>
 
         <div class="contact__form-wrap reveal">
-          <form class="form" id="contact-form" data-form-name="Contact Form" novalidate>
+          <form class="form" id="contact-form" data-form-name="Contact Form" novalidate
+                method="POST" action="https://vision.leadrai.com/api/forms/323616ccff3c9180b5b14e31c0418b42">
             <h3 class="form__title">Send us a message</h3>
+
+            <input type="hidden" name="_form" value="Contact">
+            <input type="hidden" name="_page" id="form-page" value="">
+            <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" style="display:none">
 
             <div class="field">
               <label for="name">Name</label>
